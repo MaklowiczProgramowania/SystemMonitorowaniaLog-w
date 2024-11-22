@@ -22,26 +22,34 @@
             <div class="offcanvas-body">
               <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
                 <li class="nav-item">
-                  <a class="nav-link active" aria-current="page" href="#">Strona główna</a>
+                  <a class="nav-link active" aria-current="page" href="/">Strona główna</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#">Mapa połączeń</a>
+                  <a class="nav-link" href="/mapaPoloczen">Mapa połączeń</a>
                 </li>
                 <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     Wykresy połączeń
                   </a>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Dzisiaj</a></li>
-                    <li><a class="dropdown-item" href="#">Ten tydzień</a></li>
-                    <li><a class="dropdown-item" href="#">Porzedni tydzień</a></li>
-                    <li><a class="dropdown-item" href="#">Ogólny</a></li>
+                    <li><a class="dropdown-item" href="/wykresPoloczen/dzisiaj">Dzisiaj</a></li>
+                    <li><a class="dropdown-item" href="/wykresPoloczen/aktTydzien">Aktualny tydzień</a></li>
+                    <li><a class="dropdown-item" href="/wykresPoloczen/popTydzien">Porzedni tydzień</a></li>
+                    <li><a class="dropdown-item" href="/wykresPoloczen">Pełen okres</a></li>
                     <li>
-                        <form class="d-flex mt-3" role="search">
-                            <input id="datePicker" class="form-control me-2" type="date" aria-label="Szukaj">
-                            <button class="btn btn-outline-success" type="submit">Szukaj</button>
-                        </form>
-                    </li> 
+                      <hr class="dropdown-divider">
+                    </li>
+                    <form role="search">
+                      <div class="dropdown-item">
+                        <label for="dataStartWykres" class="form-label">Od dnia:</label>
+                        <input id="dataStartWykres" class="form-control me-2" type="date" aria-label="Data rozpoczynająca">
+                      </div>
+                      <div class="dropdown-item">
+                        <label for="dataStartWykres" class="form-label">Do dnia:</label>
+                        <input id="dataKoniecWykres" class="form-control me-2" type="date" aria-label="Data kończąca">
+                      </div>
+                      <button class="btn btn-outline-success" type="submit">Szukaj</button>
+                    </form>
                   </ul>
                 </li>
                 <li class="nav-item">
@@ -59,7 +67,8 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script type="text/javascript">
-      datePicker.max = new Date().toISOString().split("T")[0];
+      dataStartWykres.max = new Date().toISOString().split("T")[0];
+      dataKoniecWykres.max = new Date().toISOString().split("T")[0];
     </script>
   </body>
 </html>
