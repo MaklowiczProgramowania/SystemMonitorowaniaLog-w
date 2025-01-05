@@ -1,4 +1,155 @@
 {% extends "nawigacja.html" %}
 {% block content %}
-<h1 style="margin: 300px 500px;">{{okresCzasuWykresu}}</h1>
+<h1 style="text-align: center; margin-top: 100px;">{{okresCzasuWykresu}}</h1>
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wykres</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script> <!-- Dodanie wtyczki zoom -->
+    
+    <style>
+        /* Wyśrodkowanie wykresu na ekranie */
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh; /* Wysokość wykresu na 80% wysokości ekranu */
+            margin: auto;
+            margin-left: -50px;
+        }
+
+        #chart {
+            max-width: 85%; /* Zabezpieczenie przed przekroczeniem szerokości ekranu */
+            max-height: 100%; /* Zabezpieczenie przed przekroczeniem wysokości ekranu */
+            width: 90%; /* Dostosowanie szerokości wykresu */
+            height: 80%; /* Dostosowanie wysokości wykresu */
+        }
+    </style>
+</head>
+<body>
+    <!-- Kontener z wykresem -->
+    <div class="chart-container">
+        <canvas id="chart"></canvas>
+    </div>
+
+<script>
+    const ctx = document.getElementById('chart').getContext('2d');
+
+    // Sprawdzenie, czy dane są puste i ustawienie domyślnych wartości
+    const dates = {{ dates | tojson | safe }}.length ? {{ dates | tojson | safe }} : ['Brak danych'];
+    const counts = {{ counts | tojson | safe }}.length ? {{ counts | tojson | safe }} : [0];
+
+    // Tworzenie wykresu
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Liczba zapytań',
+                data: counts,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                fill: true,
+                tension: 0,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false // Ukryj legendę
+                },
+                tooltip: {
+                    callbacks: {
+                        title: (context) => {
+                            const label = context[0].label;
+                            return label.length === 2 && !label.includes('-') 
+                                ? `Godzina: ${label}` 
+                                : `Data: ${label}`;
+                        },
+                        label: (context) => {
+                            return `Liczba zapytań: ${context.raw}`;
+                        }
+                    },
+                    displayColors: false // Wyłącz kolorowy kwadrat w tooltipie
+                },
+                zoom: {
+                    pan: {
+                        enabled: true, // Włącza przesuwanie
+                        mode: 'x', // Przesuwanie tylko w osi X
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true, // Włącza zoomowanie przy pomocy kółka myszy
+                        },
+                        pinch: {
+                            enabled: true // Włącza zoomowanie na urządzeniach dotykowych
+                        },
+                        mode: 'x', // Zoomowanie tylko w osi X
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { 
+                        display: true, 
+                        text: 'Data/Godzina',
+                        font: {
+                            weight: 'bold',
+                            size: 16
+                        }
+                    },
+                    ticks: {
+                        maxTicksLimit: 10,
+                        font: {
+                            weight: 'bold',
+                            size: 14
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.2)', // Kolor kratek na osi X
+                        lineWidth: 1.5 // Grubość linii kratek na osi X
+                    }
+                },
+                y: {
+                    title: { 
+                        display: true, 
+                        text: 'Liczba zapytań',
+                        font: {
+                            weight: 'bold',
+                            size: 16
+                        }
+                    },
+                    beginAtZero: true,
+                    ticks: {
+                        font: {
+                            weight: 'bold',
+                            size: 14
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.2)', // Kolor kratek na osi Y
+                        lineWidth: 1.5 // Grubość linii kratek na osi Y
+                    }
+                }
+            }
+        }
+    });
+
+    // Obsługa przesuwania wykresu za pomocą strzałek
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') { // Strzałka w lewo
+            chart.pan({ x: 100 }); // Przesuwa wykres w prawo
+        } else if (event.key === 'ArrowRight') { // Strzałka w prawo
+            chart.pan({ x: -100 }); // Przesuwa wykres w lewo
+        }
+    });
+</script>
+</body>
+</html>
 {% endblock %}

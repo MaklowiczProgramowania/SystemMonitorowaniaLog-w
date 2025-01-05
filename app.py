@@ -1,9 +1,16 @@
-from flask import Flask, render_template, render_template_string
-import folium, sqlite3, requests, time, logging
+import sqlite3
+from flask import Flask, render_template, render_template_string, request
+import folium, re, time, logging
+from datetime import datetime, timedelta
+import requests
 
-# Funkcje do łączenia z bazą danych
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 
+# Initialize Flask app
+app = Flask(__name__)
+
+# Functions for database connection
 def polaczZBaza():
     return sqlite3.connect('logs_database.db')
 
@@ -61,9 +68,89 @@ def synchronizujAdresy():
     if nowe_adresy:
         aktualizujPrzetlumaczoneAdresy(nowe_adresy)
 
-# Ścieżki na stronie
-app = Flask(__name__)
+# Function for normalizing date format
+def normalize_date(log_date):
+    pattern = r'(\d{2})/(\w{3})/(\d{4}):(\d{2}):(\d{2}):(\d{2})'
+    months = {
+        "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04", "May": "05",
+        "Jun": "06", "Jul": "07", "Aug": "08", "Sep": "09", "Oct": "10",
+        "Nov": "11", "Dec": "12"
+    }
+    match = re.match(pattern, log_date)
+    if match:
+        day, month_str, year, hour, minute, second = match.groups()
+        return f"{year}-{months.get(month_str, '01')}-{day} {hour}:{minute}:{second}"
+    return None
 
+# Function to fetch logs and filter by date
+def get_filtered_logs(start_date, end_date, tabela):
+    if not re.match(r'^[a-zA-Z0-9_]+$', tabela):  # Validate table name
+        raise ValueError("Invalid table name.")
+    
+    query = f"SELECT date_time FROM {tabela}"
+    with polaczZBaza() as con:
+        cursor = con.cursor()
+        rows = cursor.execute(query).fetchall()
+
+    return [
+        normalize_date(row[0]) for row in rows
+        if normalize_date(row[0]) and start_date <= normalize_date(row[0])[:10] <= end_date
+    ]
+
+# Function for date range based on period
+def get_date_range(period):
+    today = datetime.now()
+    if period == "popTydzien":
+        start = today - timedelta(days=today.weekday() + 7)
+        end = start + timedelta(days=6)
+    elif period == "aktTydzien":
+        start = today - timedelta(days=today.weekday())
+        end = today
+    elif period == "dzisiaj":
+        start = end = today
+    else:
+        return None, None
+    return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
+
+# Grouping logs by different time intervals
+def group_logs(filtered_logs, start_date, end_date, group_by="day"):
+    log_counts = {}
+    start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+    end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)  # End of the day
+
+    if group_by == "day":
+        current_date = start_datetime
+        while current_date < end_datetime:
+            log_counts[current_date.strftime('%Y-%m-%d')] = 0
+            current_date += timedelta(days=1)
+        for log in filtered_logs:
+            date = log[:10]
+            if date in log_counts:
+                log_counts[date] += 1
+
+    elif group_by == "hour" and len(set(log[:10] for log in filtered_logs)) == 1:
+        log_counts = {f"{hour:02d}:00": 0 for hour in range(24)}
+        for log in filtered_logs:
+            hour = log[11:13] + ":00"
+            log_counts[hour] += 1
+
+    elif group_by == "4hour":
+        current_datetime = start_datetime
+        while current_datetime < end_datetime:
+            key = current_datetime.strftime('%Y-%m-%d %H:%M')
+            log_counts[key] = 0
+            current_datetime += timedelta(hours=4)
+        for log in filtered_logs:
+            log_time = datetime.strptime(log, '%Y-%m-%d %H:%M:%S')
+            for interval_start in log_counts.keys():
+                interval_start_dt = datetime.strptime(interval_start, '%Y-%m-%d %H:%M')
+                if interval_start_dt <= log_time < interval_start_dt + timedelta(hours=4):
+                    log_counts[interval_start] += 1
+                    break
+
+    return sorted(log_counts.keys()), [log_counts[key] for key in sorted(log_counts.keys())]
+
+# Flask routes for map and log visualization
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -97,21 +184,57 @@ def mapaPoloczen():
         iframe=iframe,
     )
 
-@app.route("/wykresPoloczen")
-def wykresPoloczen():
-    return render_template("wykresPoloczen.html", okresCzasuWykresu = "Wykres z pełnego zakresu")
-
 @app.route("/wykresPoloczen/<okresCzasu>")
 def wykresPoloczenZakres(okresCzasu):
-    if okresCzasu == "dzisiaj":
-        return render_template("wykresPoloczen.html", okresCzasuWykresu = "Wykres z dzisiaj")
-    elif okresCzasu == "aktTydzien":
-        return render_template("wykresPoloczen.html", okresCzasuWykresu = "Wykres z aktualnego tygodnia")
-    elif okresCzasu == "popTydzien":
-        return render_template("wykresPoloczen.html", okresCzasuWykresu = "Wykres z poprzedniego tygodnia")
+    tabela = request.args.get("tabela", "nginx_logs")
+    start_date, end_date = get_date_range(okresCzasu)
+    if not start_date or not end_date:
+        return "Nieprawidłowy okres czasu", 400
+
+    filtered_logs = get_filtered_logs(start_date, end_date, tabela)
+    delta = (datetime.strptime(end_date, "%Y-%m-%d") - datetime.strptime(start_date, "%Y-%m-%d")).days
+
+    if delta == 0:
+        group_by = "hour"  
+    elif delta == 1:
+        group_by = "4hour"  
+    else:
+        group_by = "day"  
+
+    dates, counts = group_logs(filtered_logs, start_date, end_date, group_by)
+
+    if delta == 0:
+        dates = [date for date in dates]
+
+    okresCzasuWykresu = {
+        "popTydzien": f"Wykres z tabeli {tabela}: Poprzedni tydzień (poniedziałek-niedziela)",
+        "aktTydzien": f"Wykres z tabeli {tabela}: Bieżący tydzień (poniedziałek-dzisiaj)",
+        "dzisiaj": f"Wykres z tabeli {tabela}: Dzisiaj"
+    }.get(okresCzasu, "Wykres")
+
+    return render_template('wykresPoloczen.html', dates=dates, counts=counts, okresCzasuWykresu=okresCzasuWykresu)
+
+@app.route("/wykresPoloczen", methods=['GET'])
+def search():
+    tabela = request.args.get('tabela', 'nginx_logs')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if not start_date or not end_date:
+        return "Musisz podać zakres dat", 400
+
+    filtered_logs = get_filtered_logs(start_date, end_date, tabela)
+    delta = (datetime.strptime(end_date, "%Y-%m-%d") - datetime.strptime(start_date, "%Y-%m-%d")).days
+
+    if delta == 0:
+        group_by = "hour"
+    elif delta == 1:
+        group_by = "4hour"
+    else:
+        group_by = "day"
+
+    dates, counts = group_logs(filtered_logs, start_date, end_date, group_by)
+    return render_template("wykresPoloczen.html", dates=dates, counts=counts)
 
 if __name__ == "__main__":
-    # Aktualizuj baze danych
     synchronizujAdresy()
-    # Uruchom aplikacje
     app.run(debug=True)

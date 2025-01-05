@@ -1,18 +1,16 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>
-      🔎 Monitor serwera
-    </title>
+    <title>🔎 Monitor serwera</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   </head>
   <body>
-    <div class="container">
-    <nav class="navbar bg-body-tertiary fixed-top text-left" style="border-bottom: 1px solid black">
+    <div class="container-fluid">
+    <nav class="navbar bg-body-tertiary fixed-top text-left">
         <div class="container-fluid">
-          <a class="navbar-brand" href="/">🔎Monitor serwera{% block title %}{% endblock %}</a>
+          <a class="navbar-brand" href="/">🔎 Monitor serwera</a>
           <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -24,7 +22,7 @@
             <div class="offcanvas-body">
               <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
                 <li class="nav-item">
-                  <a class="nav-link" aria-current="page" href="/">Strona główna</a>
+                  <a class="nav-link active" aria-current="page" href="/">Strona główna</a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="/mapaPoloczen">Mapa połączeń</a>
@@ -34,26 +32,61 @@
                     Wykresy połączeń
                   </a>
                   <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/wykresPoloczen/dzisiaj">Dzisiaj</a></li>
-                    <li><a class="dropdown-item" href="/wykresPoloczen/aktTydzien">Aktualny tydzień</a></li>
-                    <li><a class="dropdown-item" href="/wykresPoloczen/popTydzien">Porzedni tydzień</a></li>
-                    <li><a class="dropdown-item" href="/wykresPoloczen">Pełen okres</a></li>
-                    <li>
-                      <hr class="dropdown-divider">
-                    </li>
-                    <form role="search">
-                      <div class="dropdown-item">
-                        <label for="dataStartWykres" class="form-label">Od dnia:</label>
-                        <input id="dataStartWykres" class="form-control me-2" type="date" aria-label="Data rozpoczynająca">
-                      </div>
-                      <div class="dropdown-item">
-                        <label for="dataStartWykres" class="form-label">Do dnia:</label>
-                        <input id="dataKoniecWykres" class="form-control me-2" type="date" aria-label="Data kończąca">
-                      </div>
-                      <button class="btn btn-outline-success" type="submit">Szukaj</button>
+                    <!-- Lista rozwijana wyboru tabeli -->
+                    <form id="tabelaForm" action="/wykresPoloczen/dzisiaj" method="get">
+                        
+                        <div class="dropdown-item">
+                            <label for="tableSelect" class="form-label">Wybierz tabelę:</label>
+                                <select id="tableSelect" name="tabela" class="form-select">
+                                <option value="nginx_logs" selected>Nginx Logs</option>
+                                <option value="apache_access_logs">Apache Access Logs</option>
+                                </select>
+                        </div>
+                        <!-- Przyciski w osobnych wierszach -->
+                        <div class="dropdown-item">
+                            <button class="btn btn-outline-primary w-100 my-1" type="submit" formaction="/wykresPoloczen/dzisiaj">Dzisiaj</button>
+                        </div>
+                        
+                        <div class="dropdown-item">
+                            <button class="btn btn-outline-primary w-100 my-1" type="submit" formaction="/wykresPoloczen/aktTydzien">Aktualny tydzień</button>
+                        </div>
+                        
+                        <div class="dropdown-item">
+                            <button class="btn btn-outline-primary w-100 my-1" type="submit" formaction="/wykresPoloczen/popTydzien">Poprzedni tydzień</button>
+                        </div>
+                        
                     </form>
+                <li>
+                <hr class="dropdown-divider">
+                </li>
+                      
+                    <!-- Zakres dat -->
+                      <form action="/wykresPoloczen" method="get" role="search">
+                        <div class="dropdown-item">
+                            <label for="dataStartWykres" class="form-label">Od dnia:</label>
+                            <input id="dataStartWykres" name="start_date" class="form-control me-2" type="date" aria-label="Data rozpoczynająca" required>
+                        </div>
+                          
+                        <div class="dropdown-item">
+                            <label for="dataKoniecWykres" class="form-label">Do dnia:</label>
+                            <input id="dataKoniecWykres" name="end_date" class="form-control me-2" type="date" aria-label="Data kończąca" required>
+                        </div>
+                          
+                          <div class="dropdown-item">
+                            <label for="tableSelectDate" class="form-label">Wybierz tabelę:</label>
+                            <select id="tableSelectDate" name="tabela" class="form-select">
+                            <option value="nginx_logs" selected>Nginx Logs</option>
+                            <option value="apache_access_logs">Apache Access Logs</option>
+                            </select>
+                          </div>
+                          
+                        <button class="btn btn-outline-success w-100 my-1" type="submit">Szukaj</button>
+                          
+                      </form>
                   </ul>
                 </li>
+
+
                 <li class="nav-item">
                     <a class="nav-link" href="#">Wygeneruj dzienny raport</a>
                 </li>         
@@ -63,8 +96,10 @@
         </div>
       </nav>
     </div>
-    {% block content %}
-    {% endblock %}
+    <div class="container-fluid">
+      {% block content %}
+      {% endblock %}
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script type="text/javascript">
       dataStartWykres.max = new Date().toISOString().split("T")[0];
