@@ -1,6 +1,7 @@
 import sqlite3
 from flask import Flask, render_template, render_template_string, request
 import folium, re, time, logging
+from folium.plugins import MarkerCluster
 from datetime import datetime, timedelta
 import requests
 
@@ -162,23 +163,43 @@ def mapaPoloczen():
         print("Brak danych do stworzenia mapy.")
         return
     
-    mapa = folium.Map(location=[0, 0], width="100vw", height="100vh", position="absolute", top="56px", left="0px", zoom_start=3)
+    attr = ('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ''contributors, &copy; <a href="https://cartodb.com/attributions">CartoDB</a>')
+    mapa = folium.Map(location=[50, 0], tiles="cartodb positron", attr=attr, width="100vw", height="897px", zoom_start=3, min_zoom=3, max_zoom=8, max_bounds=True)
     
+    marker_cluster = MarkerCluster(
+        name='1000 clustered icons',
+        overlay=True,
+        control=False,
+        icon_create_function=None
+    )
+
     for adres in adresy:
-        folium.Marker(
-            location=[adres["lat"], adres["lon"]],
-            popup=f"IP: {adres['ip']}",
-            icon=folium.Icon(color="blue", icon="info-sign")
-        ).add_to(mapa)
+        location = adres["lat"], adres["lon"]
+        marker = folium.Marker(location=location)
+        popup = f"IP: {adres['ip']}"
+        folium.Popup(popup).add_to(marker)
+        marker_cluster.add_child(marker)
+
+    marker_cluster.add_to(mapa)
+
+        # folium.Marker(
+        #     location=[adres["lat"], adres["lon"]],
+        #     popup=f"IP: {adres['ip']}",
+        #     icon=folium.Icon(color="blue", icon="info-sign")
+        # ).add_to(mapa)
 
     iframe = mapa.get_root()._repr_html_()
 
     return render_template_string(
         """
             {% extends "nawigacja.html" %}
-            {% block title %} / 🗺️Mapa połączeń{% endblock %}
-            {% block content %}
-                {{ iframe|safe }}
+            {% block bodyContent %}
+                <div style="padding-top: 50px">
+                    {{ iframe|safe }}
+                </div>
+            <script type="text/javascript">
+                document.body.style.overflow = "hidden";
+            </script>
             {% endblock %}
         """,
         iframe=iframe,

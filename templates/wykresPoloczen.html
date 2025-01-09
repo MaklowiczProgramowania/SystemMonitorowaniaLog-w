@@ -1,13 +1,5 @@
 {% extends "nawigacja.html" %}
-{% block content %}
-<h1 style="text-align: center; margin-top: 100px;">{{okresCzasuWykresu}}</h1>
-
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wykres</title>
+{% block headerContent %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script> <!-- Dodanie wtyczki zoom -->
     
@@ -21,22 +13,23 @@
             margin: auto;
             margin-left: -50px;
         }
-
+        
         #chart {
             max-width: 85%; /* Zabezpieczenie przed przekroczeniem szerokości ekranu */
             max-height: 100%; /* Zabezpieczenie przed przekroczeniem wysokości ekranu */
             width: 90%; /* Dostosowanie szerokości wykresu */
             height: 80%; /* Dostosowanie wysokości wykresu */
         }
-    </style>
-</head>
-<body>
+        </style>
+{% endblock %}
+{% block bodyContent %}
+    <h1 style="text-align: center; margin-top: 100px;">{{okresCzasuWykresu}}</h1>
     <!-- Kontener z wykresem -->
     <div class="chart-container">
         <canvas id="chart"></canvas>
     </div>
 
-<script>
+<script type="text/javascript">
     const ctx = document.getElementById('chart').getContext('2d');
 
     // Sprawdzenie, czy dane są puste i ustawienie domyślnych wartości
@@ -150,6 +143,4 @@
         }
     });
 </script>
-</body>
-</html>
 {% endblock %}
