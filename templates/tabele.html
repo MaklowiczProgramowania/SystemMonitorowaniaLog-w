@@ -1,0 +1,86 @@
+{% extends "nawigacja.html" %}
+{% block bodyContent%}
+<div class="container mt-5" style="padding-top: 50px;">
+    {% for tabela in daneZTabel %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>{{ tabela.tabela }}</h3>
+                {% if tabela.tabela == "nginx_logs" or tabela.tabela == "apache_access_logs" %}
+                    <div class="input-group mb-3" style="margin-top: 20px">
+                        <input type="text" class="form-control search-input" placeholder="Szukaj po adresie IP..." aria-label="Szukaj po adresie IP">
+                    </div>
+                {% elif tabela.tabela == "apache_error_logs" %}
+                    <div class="input-group mb-3" style="margin-top: 20px">
+                        <input type="text" class="form-control search-input" placeholder="Szukaj po PID..." aria-label="Szukaj po PID">
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                {% for kolumna in tabela.kolumny %}
+                                    <th>{{ kolumna }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wiersz in tabela.dane[:10] %}
+                                <tr>
+                                    {% for komorka in wiersz %}
+                                        <td>{{ komorka }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                            {% if tabela.dane|length > 10 %}
+                                {% for wiersz in tabela.dane[10:] %}
+                                    <tr style="display: none;" class="extra-rows">
+                                        {% for komorka in wiersz %}
+                                            <td>{{ komorka }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td colspan="{{ tabela.kolumny|length }}" class="text-center">
+                                        <button class="btn btn-primary show-more">Pokaż więcej</button>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Show more functionality
+        document.querySelectorAll('.show-more').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const tableBody = event.target.closest('table').querySelector('tbody');
+                const extraRows = tableBody.querySelectorAll('.extra-rows');
+                extraRows.forEach(row => row.style.display = '');
+                event.target.style.display = 'none';
+            });
+        });
+
+        // Search functionality
+        document.querySelectorAll('.search-input').forEach(input => {
+            input.addEventListener('input', (event) => {
+                const filterValue = event.target.value.toLowerCase();
+                const table = event.target.closest('.card').querySelector('table');
+                const rows = table.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const cells = Array.from(row.querySelectorAll('td'));
+                    const isMatch = cells.some(cell => cell.textContent.toLowerCase().includes(filterValue));
+                    row.style.display = isMatch ? '' : 'none';
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

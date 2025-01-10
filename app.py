@@ -21,13 +21,21 @@ def pobierzAdresyZTabel(tabele):
         kursor = baza.cursor()
         return [wiersz[0] for wiersz in kursor.execute(f"SELECT DISTINCT ip FROM ({zapytanie})").fetchall()]
 
+def pobierzWszystkoZTabeli(tabela):
+    zapytanie_schemat = f"PRAGMA table_info({tabela})"
+    zapytanie_dane = f"SELECT * FROM {tabela}"
+    with polaczZBaza() as baza:
+        kursor = baza.cursor()
+        nazwy_kolumn = [kolumna[1] for kolumna in kursor.execute(zapytanie_schemat)]
+        dane_tabeli = kursor.execute(zapytanie_dane).fetchall()
+        return nazwy_kolumn, dane_tabeli
+
 def pobierzPrzetlumaczoneAdresy():
     with polaczZBaza() as baza:
         kursor = baza.cursor()
         return [wiersz[0] for wiersz in kursor.execute("SELECT ip FROM translated_addresses").fetchall()]
 
 def pobierzAdresWykSzer():
-    """Pobiera dane z tabeli translated_addresses."""
     with polaczZBaza() as baza:
         kursor = baza.cursor()
         return [
@@ -156,6 +164,19 @@ def group_logs(filtered_logs, start_date, end_date, group_by="day"):
 def home():
     return render_template("index.html")
 
+@app.route("/tabele")
+def tabele():
+    nazwyTabel = ["nginx_logs", "apache_error_logs", "apache_access_logs"]
+    daneZTabel = [
+        {
+            "tabela": tabela,
+            "kolumny": pobierzWszystkoZTabeli(tabela)[0],
+            "dane": pobierzWszystkoZTabeli(tabela)[1],
+        }
+        for tabela in nazwyTabel
+    ]
+    return render_template("tabele.html", daneZTabel = daneZTabel)
+
 @app.route("/mapaPoloczen")
 def mapaPoloczen():
     adresy = pobierzAdresWykSzer()
@@ -181,12 +202,6 @@ def mapaPoloczen():
         marker_cluster.add_child(marker)
 
     marker_cluster.add_to(mapa)
-
-        # folium.Marker(
-        #     location=[adres["lat"], adres["lon"]],
-        #     popup=f"IP: {adres['ip']}",
-        #     icon=folium.Icon(color="blue", icon="info-sign")
-        # ).add_to(mapa)
 
     iframe = mapa.get_root()._repr_html_()
 
