@@ -21,7 +21,9 @@
                         <thead>
                             <tr>
                                 {% for kolumna in tabela.kolumny %}
-                                    <th>{{ kolumna }}</th>
+                                    <th>
+                                        {{ kolumna }}
+                                    </th>
                                 {% endfor %}
                             </tr>
                         </thead>
@@ -56,8 +58,8 @@
 </div>
 
 <script>
+    // Show more functionality
     document.addEventListener('DOMContentLoaded', () => {
-        // Show more functionality
         document.querySelectorAll('.show-more').forEach(button => {
             button.addEventListener('click', (event) => {
                 const tableBody = event.target.closest('table').querySelector('tbody');

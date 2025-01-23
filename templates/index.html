@@ -1,57 +1,106 @@
 {% extends "nawigacja.html" %}
 {% block bodyContent %}
-<div class="container-fluid" style="padding-top: 110px;">  <!-- Zwiększamy odstęp do 120px -->
+<div class="container-fluid" style="padding-top: 110px;">
+  <!-- Formularz do przełączania tabeli -->
+
+
+  <!-- Pierwszy wiersz -->
   <div class="row">
+    <!-- Ranking użytkowników -->
     <div class="col-12 col-md-4 mb-4">
-      <div class="card w-100" style="min-height: 360px;">  <!-- Zwiększamy minimalną wysokość -->
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">Miejsce 1</h5>
-          <p class="card-text">Opis miejsca 1.</p>
+      <div class="card w-100" style="min-height: 490px; display: flex; flex-direction: column; height: 360px;">
+        <div class="card-header bg-dark text-white">
+          Ranking użytkowników
+        </div>
+        <div class="card-body d-flex justify-content-center align-items-center" style="overflow: hidden;">
+         <img src="{{ url_for('top_ips_chart', table=table) }}" alt="Ranking IP">
         </div>
       </div>
     </div>
+
+    <!-- Procentowy udział metod HTTP -->
     <div class="col-12 col-md-4 mb-4">
-      <div class="card w-100" style="min-height: 360px;">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">Miejsce 2</h5>
-          <p class="card-text">Opis miejsca 2.</p>
+      <div class="card w-100" style="min-height: 490px; display: flex; flex-direction: column; height: 360px;">
+        <div class="card-header bg-dark text-white">
+          Procentowy udział metod HTTP
+        </div>
+        <div class="card-body d-flex justify-content-center align-items-center" style="overflow: hidden;">
+          <img src="{{ url_for('http_methods_chart', table=table) }}" alt="Wykres kołowy metod HTTP" class="img-fluid" style="max-width: 100%;">
         </div>
       </div>
     </div>
+
+    <!-- Trzeci prostokąt z nawigacją -->
     <div class="col-12 col-md-4 mb-4">
-      <div class="card w-100" style="min-height: 360px;">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">Miejsce 3</h5>
-          <p class="card-text">Opis miejsca 3.</p>
+      <div class="card w-100" style="min-height: 490px; display: flex; flex-direction: column; height: 360px;">
+        <div class="card-header bg-dark text-white">
+          Szybka nawigacja
+        </div>
+        <div class="card-body d-flex flex-column" style="height: 100%; overflow: hidden;">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <a href="/mapaPoloczen" class="text-decoration-none d-block py-2" style="font-size: 1.2rem;">Mapa połączeń</a>
+            </li>
+            <li class="list-group-item">
+              <a href="/wykresPoloczen/dzisiaj" class="text-decoration-none d-block py-2" style="font-size: 1.2rem;">Wykres dzisiaj</a>
+            </li>
+            <li class="list-group-item">
+              <a href="/wykresPoloczen/aktTydzien" class="text-decoration-none d-block py-2" style="font-size: 1.2rem;">Wykres aktualny tydzień</a>
+            </li>
+            <li class="list-group-item">
+              <a href="/wykresPoloczen/popTydzien" class="text-decoration-none d-block py-2" style="font-size: 1.2rem;">Wykres poprzedni tydzień</a>
+            </li>
+            <li class="list-group-item">
+              <a href="/raport" target="_blank" class="text-decoration-none d-block py-2" style="font-size: 1.2rem;">Wygeneruj dzienny raport</a>
+            </li>
+          </ul><br><br>
+              <div class="row mb-4">
+    <div class="col-12 text-center">
+      <form method="get" action="" id="switchTableForm">
+        <button type="submit" class="btn btn-primary" name="table" value="nginx_logs">nginx_logs</button>
+        <button type="submit" class="btn btn-primary" name="table" value="apache_access_logs">apache_access_logs</button>
+      </form>
+    </div>
+  </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="row">
-    <div class="col-12 col-md-4 mb-4">
-      <div class="card w-100" style="min-height: 360px;">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">Miejsce 4</h5>
-          <p class="card-text">Opis miejsca 4.</p>
-        </div>
+
+<!-- Drugi wiersz -->
+<div class="row justify-content-center">
+  <div class="col-12 col-md-5 mb-4">
+    <div class="card w-100" style="min-height: 490px; display: flex; flex-direction: column; height: 360px;">
+      <div class="card-header bg-dark text-white">
+        Kody statusu (Sukces, Przekierowanie, Błąd klienta, Błąd serwera)
+      </div>
+      <div class="card-body d-flex flex-column" style="overflow: hidden;">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item border-bottom" style="font-size: 16px;">Kody statusu 200-299 (Sukces): <strong>{{ codes_count['Sukces (200-299)'] }}</strong></li>
+          <li class="list-group-item border-bottom" style="font-size: 16px;">Kody statusu 300-399 (Przekierowanie): <strong>{{ codes_count['Przekierowanie (300-399)'] }}</strong></li>
+          <li class="list-group-item border-bottom" style="font-size: 16px;">Kody statusu 400-499 (Błąd klienta): <strong>{{ codes_count['Błąd klienta (400-499)'] }}</strong></li>
+          <li class="list-group-item" style="font-size: 16px;"> Kody statusu 500-599 (Błąd serwera): <strong>{{ codes_count['Błąd serwera (500-599)'] }}</strong></li>
+        </ul>
+      </div>
+      
+      <div class="card-body d-flex justify-content-center align-items-center" style="overflow: hidden;">
+        <img src="{{ url_for('http_status_pie_chart', table=table) }}" alt="Statusy HTTP">
+
       </div>
     </div>
-    <div class="col-12 col-md-4 mb-4">
-      <div class="card w-100" style="min-height: 360px;">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">Miejsce 5</h5>
-          <p class="card-text">Opis miejsca 5.</p>
-        </div>
+  </div>
+
+  <div class="col-12 col-md-5 mb-4">
+    <div class="card w-100" style="min-height: 490px;">
+      <div class="card-header bg-dark text-white">
+        Systemy operacyjne
       </div>
-    </div>
-    <div class="col-12 col-md-4 mb-4">
-      <div class="card w-100" style="min-height: 360px;">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">Miejsce 6</h5>
-          <p class="card-text">Opis miejsca 6.</p>
-        </div>
+      <div class="card-body d-flex flex-column">
+        <img src="{{ url_for('os_chart', table=table) }}" alt="Wykres systemów operacyjnych">
       </div>
     </div>
   </div>
 </div>
+</div>
+
 {% endblock %}
